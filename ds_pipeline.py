@@ -16,7 +16,8 @@ sys.path.append(str(Path(__file__).resolve().parents[2] / 'common/python'))
 
 log.basicConfig(format='[ %(levelname)s ] %(message)s', level=log.DEBUG, stream=sys.stdout)
 
-common_module_path = str(os.path.join(os.path.dirname(os.path.realpath(__file__)) , 'open_model_zoo/demos/common/python'))
+common_module_path = str(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), 'open_model_zoo/demos/common/python'))
 sys.path.append(common_module_path)
 
 from face_identifier import FaceIdentifier
@@ -51,7 +52,7 @@ def build_argparser():
                          help='Optional. Specify the maximum output window resolution '
                               'in (width x height) format. Example: 1280x720. '
                               'Input frame size used by default.')
-    general.add_argument('--no_show', default = True, action='store_true',
+    general.add_argument('--no_show', default=True, action='store_true',
                          help="Optional. Don't show output.")
     general.add_argument('--crop_size', default=(0, 0), type=int, nargs=2,
                          help='Optional. Crop the input stream to this resolution.')
@@ -65,7 +66,7 @@ def build_argparser():
     gallery.add_argument('--run_detector', action='store_true',
                          help='Optional. Use Face Detection model to find faces '
                               'on the face images, otherwise use full images.')
-    gallery.add_argument('--allow_grow', default = True, action='store_true',
+    gallery.add_argument('--allow_grow', default=True, action='store_true',
                          help='Optional. Allow to grow faces gallery and to dump on disk. '
                               'Available only if --no_show option is off.')
 
@@ -128,6 +129,7 @@ def process_video(input_video_filename: str):
     args.m_reid = reidentification_model_path
 
     cap = open_images_capture(input_video_filename, args.loop)
+    fps = cap.fps()
     frame_processor = FrameProcessor(args)
 
     frame_num = 0
@@ -163,7 +165,7 @@ def process_video(input_video_filename: str):
                 raise RuntimeError("Can't open video writer")
 
         detections = frame_processor.process(frame)
-        save_detections_to_json(detections, log_dir=jsons_path)
+        save_detections_to_json(detections, frame_num, log_dir=jsons_path)
         presenter.drawGraphs(frame)
         frame = draw_detections(frame, frame_processor, detections, output_transform,
                                 unknown_id=FaceIdentifier.UNKNOWN_ID)
@@ -184,6 +186,11 @@ def process_video(input_video_filename: str):
     metrics.log_total()
     for rep in presenter.reportMeans():
         log.info(rep)
+
+
+
+
+
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 process_video(os.path.join(script_path, "open_model_zoo/demos/face_recognition_demo/class_fussy.mp4"))

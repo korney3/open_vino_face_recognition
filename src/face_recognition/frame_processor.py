@@ -4,6 +4,8 @@ from pathlib import Path
 
 from openvino.runtime import Core, get_version
 
+from src.emotions_classification.emotion_classifier import EmotionClassifier
+
 sys.path.append(str(Path(__file__).resolve().parents[2] / 'common/python'))
 
 from utils import crop
@@ -35,6 +37,7 @@ class FrameProcessor:
         self.face_identifier = FaceIdentifier(core, args.m_reid,
                                               match_threshold=args.t_id,
                                               match_algo=args.match_algo)
+        self.emotion_classifier = EmotionClassifier()
 
         self.face_detector.deploy(args.d_fd)
         self.landmarks_detector.deploy(args.d_lm, self.QUEUE_SIZE)
@@ -51,6 +54,9 @@ class FrameProcessor:
         orig_image = frame.copy()
 
         rois = self.face_detector.infer((frame,))
+
+        emotions = self.emotion_classifier.process(frame, rois)
+
         if self.QUEUE_SIZE < len(rois):
             log.warning('Too many faces for processing. Will be processed only {} of {}'
                         .format(self.QUEUE_SIZE, len(rois)))
@@ -73,5 +79,5 @@ class FrameProcessor:
                     id = self.faces_database.dump_faces(crop_image, face_identities[i].descriptor, name)
                     face_identities[i].id = id
 
-        return [rois, face_identities] #landmarks, face_identities]
+        return [rois, face_identities, emotions] #landmarks, face_identities]
 

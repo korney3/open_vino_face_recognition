@@ -15,11 +15,19 @@ def center_crop(frame, crop_size):
 def draw_detections(frame, frame_processor, detections, output_transform, unknown_id):
     size = frame.shape[:2]
     frame = output_transform.resize(frame)
-    for roi, identity in zip(*detections):# landmarks, identity in zip(*detections):
+    rois, face_identities, emotions = detections
+    if len(rois)!=len(face_identities):
+        return
+    for i in range(len(rois)):
+        roi = rois[i]
+        identity = face_identities[i]
+        emotion = emotions[i]
+        main_emotion, main_emotion_score = get_main_emotion(emotion)
+
         text = frame_processor.face_identifier.get_identity_label(identity.id)
         if identity.id != unknown_id:
             text += ' %.2f%%' % (100.0 * (1 - identity.distance))
-
+        text +=f"\n{main_emotion}: {round(main_emotion_score,3)}"
         xmin = max(int(roi.position[0]), 0)
         ymin = max(int(roi.position[1]), 0)
         xmax = min(int(roi.position[0] + roi.size[0]), size[1])
@@ -37,10 +45,14 @@ def draw_detections(frame, frame_processor, detections, output_transform, unknow
 
     return frame
 
-def save_detections_to_json(detections, log_dir = ""):
+def get_main_emotion(emotion):
+    sorted_emotion = sorted(emotion.items(), key=lambda item: item[1])
+    return sorted_emotion[-1]
+
+def save_detections_to_json(detections, frame_num, log_dir = "", fps = 1, db_path = ""):
     time_str = datetime.now().strftime('%d_%m_%Y-%H_%M_%S')
 
-    rois, face_identities = detections
+    rois, face_identities, emotions = detections
     if len(rois)!=len(face_identities):
         return
     results = []
@@ -48,18 +60,26 @@ def save_detections_to_json(detections, log_dir = ""):
         result = {}
         roi = rois[i]
         face_identity = face_identities[i]
+        emotion = emotions[i]
 
-        result["image_id"] = int(roi.image_id)
-        result["label"] = int(roi.label)
-        result["confidence"] = float(roi.confidence)
-        result["position_x"] = float(roi.position[0])
-        result["position_y"] = float(roi.position[1])
-        result["size_width"] = float(roi.size[0])
-        result["size_height"] = float(roi.size[1])
+        result['time'] = frame_num/fps
+
+
+        # result["image_id"] = int(roi.image_id)
+        # result["label"] = int(roi.label)
+        # result["confidence"] = float(roi.confidence)
+        # result["position_x"] = float(roi.position[0])
+        # result["position_y"] = float(roi.position[1])
+        # result["size_width"] = float(roi.size[0])
+        # result["size_height"] = float(roi.size[1])
 
         result["id"] = int(face_identity.id)
-        result["distance"] = float(face_identity.distance)
-        result["descriptor"] = face_identity.descriptor.tolist()
+        result["image_src"] = os.path.join(db_path, f"pupil_id_{id}-0.jpg")
+        # result["distance"] = float(face_identity.distance)
+        # result["descriptor"] = face_identity.descriptor.tolist()
+
+        for key in emotion.keys():
+            result[key] = float(emotion[key])
 
         results.append(result)
     with open(os.path.join(log_dir, f"res_{time_str}.json"), "w") as f:
