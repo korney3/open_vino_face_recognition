@@ -17,28 +17,26 @@ class EmotionClassifier:
         script_path = os.path.dirname(os.path.realpath(__file__))
         model_path = os.path.join(script_path, "../models_weights")
         self.model = load_model(os.path.join(model_path, 'model_emotions'))
-        self.labels_dict =  {0:'Злость',1:'Отвращение',2:'Страх',3:'Радость',4:'Нейтральное состояние',5:'Грусть',6:'Удивление'}
+        self.labels_dict = {0: 'Злость', 1: 'Отвращение', 2: 'Страх', 3: 'Радость', 4: 'Нейтральное состояние',
+                            5: 'Грусть', 6: 'Удивление'}
 
     def process(self, frame, rois):
         inputs = self.image_preprocessing(frame, rois)
         results = [self.make_predictions(input) for input in inputs]
         return results
 
-
     def image_preprocessing(self, frame, rois):
         inputs = cut_rois(frame, rois)
         gb_inputs = list(map(lambda x: tf.image.rgb_to_grayscale(x), inputs))
-        resize_inputs = list(map(lambda x: tf.image.resize(x, (48, 48)), gb_inputs))
-        return resize_inputs
+        resize_inputs = list(map(lambda x: tf.image.resize(x, (48, 48), preserve_aspect_ratio=True), gb_inputs))
+        pad_inputs = list(map(lambda x: tf.image.resize_with_pad(x, 48, 48), resize_inputs))
+
+        return pad_inputs
 
     def make_predictions(self, img):
         img = np.expand_dims(img, axis=0)  # makes image shape (1,48,48)
         img = img.reshape(1, 48, 48, 1)
         result = self.model.predict(img)
         result = list(result[0])
-        result_naming = dict([(self.labels_dict[i], result[i]) for i in range(0,7)])
+        result_naming = dict([(self.labels_dict[i], result[i]) for i in range(0, 7)])
         return result_naming
-
-
-emotion_classifier = EmotionClassifier()
-print()

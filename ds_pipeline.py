@@ -1,3 +1,4 @@
+import json
 import logging as log
 import os
 import sys
@@ -119,7 +120,7 @@ def process_video(input_video_filename: str):
     reidentification_model_path = os.path.join(models_path,
                                                "./intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml")
 
-    args = build_argparser().parse_args()
+    args = build_argparser().parse_args([])
 
     args.fg = os.path.join(result_path, "photos_db")
     os.makedirs(args.fg, exist_ok=True)
@@ -127,7 +128,7 @@ def process_video(input_video_filename: str):
     args.m_fd = face_detector_model_path
     args.m_lm = landmarks_model_path
     args.m_reid = reidentification_model_path
-
+    args.output = os.path.join(script_path, "./demo_video/res_class_fussy.avi")
     cap = open_images_capture(input_video_filename, args.loop)
     fps = cap.fps()
     frame_processor = FrameProcessor(args)
@@ -165,7 +166,8 @@ def process_video(input_video_filename: str):
                 raise RuntimeError("Can't open video writer")
 
         detections = frame_processor.process(frame)
-        save_detections_to_json(detections, frame_num, log_dir=jsons_path)
+        results = save_detections_to_json(detections, frame_num, log_dir=jsons_path)
+        yield results
         presenter.drawGraphs(frame)
         frame = draw_detections(frame, frame_processor, detections, output_transform,
                                 unknown_id=FaceIdentifier.UNKNOWN_ID)
@@ -183,6 +185,11 @@ def process_video(input_video_filename: str):
                 break
             presenter.handleKey(key)
 
+    response = {
+        'status': 'finish',
+        'data': []
+    }
+    yield json.dumps(response, ensure_ascii=False, encoding='utf-8')
     metrics.log_total()
     for rep in presenter.reportMeans():
         log.info(rep)
@@ -193,4 +200,4 @@ def process_video(input_video_filename: str):
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
-process_video(os.path.join(script_path, "open_model_zoo/demos/face_recognition_demo/class_fussy.mp4"))
+process_video("./demo_video/class_fussy.mp4")

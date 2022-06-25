@@ -10,4 +10,8 @@ omz_downloader --list models.lst
 cd ../../../..
 pip install open_model_zoo/demos/common/python
 pip install tensorflow
+pip install flask
+pip install requests
+pip install pytest
+pip install Flask-Cors
 ```
