@@ -9,6 +9,7 @@ from time import perf_counter
 
 import cv2
 import numpy as np
+import requests
 
 from src.face_recognition.frame_processor import FrameProcessor
 from src.utils import center_crop, draw_detections, save_detections_to_json
@@ -21,7 +22,7 @@ common_module_path = str(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), 'open_model_zoo/demos/common/python'))
 sys.path.append(common_module_path)
 
-from face_identifier import FaceIdentifier
+from open_model_zoo.demos.face_recognition_demo.python.face_identifier import FaceIdentifier
 
 import monitors
 from helpers import resolution
@@ -128,7 +129,7 @@ def process_video(input_video_filename: str):
     args.m_fd = face_detector_model_path
     args.m_lm = landmarks_model_path
     args.m_reid = reidentification_model_path
-    args.output = os.path.join(script_path, "./demo_video/res_class_fussy.avi")
+    args.output = os.path.join(script_path, f"./demo_video/{time_str}.webm")
     cap = open_images_capture(input_video_filename, args.loop)
     fps = cap.fps()
     frame_processor = FrameProcessor(args)
@@ -147,10 +148,16 @@ def process_video(input_video_filename: str):
     while True:
         start_time = perf_counter()
         frame = cap.read()
+
         if frame is None:
             if frame_num == 0:
                 raise ValueError("Can't read an image from the input")
             break
+
+        if frame_num % 24 == 0 and frame_num != 0:
+            frame_num += 1
+            continue
+
         if input_crop:
             frame = center_crop(frame, input_crop)
         if frame_num == 0:
@@ -161,13 +168,16 @@ def process_video(input_video_filename: str):
                 output_resolution = (frame.shape[1], frame.shape[0])
             presenter = monitors.Presenter(args.utilization_monitors, 55,
                                            (round(output_resolution[0] / 4), round(output_resolution[1] / 8)))
-            if args.output and not video_writer.open(args.output, cv2.VideoWriter_fourcc(*'MJPG'),
+            if args.output and not video_writer.open(args.output, cv2.VideoWriter_fourcc(*'vp80'),
                                                      cap.fps(), output_resolution):
                 raise RuntimeError("Can't open video writer")
 
         detections = frame_processor.process(frame)
-        results = save_detections_to_json(detections, frame_num, log_dir=jsons_path)
-        yield results
+        results = save_detections_to_json(detections, frame_num, log_dir=jsons_path, db_path=args.fg)
+
+        r = requests.post('http://127.0.0.1:3000/api/result-class', json=results)
+        print(r)
+        # yield results
         presenter.drawGraphs(frame)
         frame = draw_detections(frame, frame_processor, detections, output_transform,
                                 unknown_id=FaceIdentifier.UNKNOWN_ID)
@@ -186,18 +196,17 @@ def process_video(input_video_filename: str):
             presenter.handleKey(key)
 
     response = {
-        'status': 'finish',
-        'data': []
+        'status': 'finished',
+        'output_src': args.output
     }
-    yield json.dumps(response, ensure_ascii=False, encoding='utf-8')
+    r = requests.post('http://127.0.0.1:3000/api/result-class', json=response)
+    # yield json.dumps(response, ensure_ascii=False)
     metrics.log_total()
     for rep in presenter.reportMeans():
         log.info(rep)
-
-
-
+    return args.output
 
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
-process_video("./demo_video/class_fussy.mp4")
+# process_video("./demo_video/class_front_view.mp4")

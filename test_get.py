@@ -28,5 +28,6 @@ from ds_backend_app import app
 
 def test_request_example():
     response = app.test_client().get("/analyze", query_string={"input_video_path": "./demo_video/class_fussy.mp4"})
+    print(response)
     assert b"<h2>Hello, World!</h2>" in response.data
 

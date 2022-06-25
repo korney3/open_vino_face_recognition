@@ -61,7 +61,7 @@ def save_detections_to_json(detections, frame_num, log_dir="", fps=1, db_path=""
     rois, face_identities, emotions = detections
     if len(rois) != len(face_identities):
         return
-    results = []
+    results = {}
     for i in range(len(rois)):
         result = {}
         roi = rois[i]
@@ -79,18 +79,19 @@ def save_detections_to_json(detections, frame_num, log_dir="", fps=1, db_path=""
         # result["size_height"] = float(roi.size[1])
 
         result["id"] = int(face_identity.id)
-        result["image_src"] = os.path.join(db_path, f"pupil_id_{id}-0.jpg")
+        result["image_src"] = os.path.join(db_path, f"pupil_id_{result['id']}-0.jpg")
         # result["distance"] = float(face_identity.distance)
         # result["descriptor"] = face_identity.descriptor.tolist()
-
+        result["name"] = f"pupil_id_{result['id']}"
         for key in emotion.keys():
             result[key] = float(emotion[key])
 
-        results.append(result)
+        results[i] = result
     # with open(os.path.join(log_dir, f"res_{time_str}.json"), "w") as f:
     #     json.dump(results, f)
     response = {
         'status': 'processing',
         'data': results
     }
+    return response
     return json.dumps(response, ensure_ascii=False)

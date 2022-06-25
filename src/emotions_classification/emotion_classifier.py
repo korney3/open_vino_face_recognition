@@ -9,7 +9,7 @@ from tensorflow.python.keras.layers import Conv2D, MaxPool2D, Dropout, Flatten, 
 from tensorflow.python.keras.models import model_from_json
 import tensorflow as tf
 
-from utils import cut_rois
+from open_model_zoo.demos.face_recognition_demo.python.utils import cut_rois
 
 
 class EmotionClassifier:
@@ -26,8 +26,9 @@ class EmotionClassifier:
         return results
 
     def image_preprocessing(self, frame, rois):
+
         inputs = cut_rois(frame, rois)
-        gb_inputs = list(map(lambda x: tf.image.rgb_to_grayscale(x), inputs))
+        gb_inputs = list(map(lambda x: tf.image.rgb_to_grayscale(x/255), inputs))
         resize_inputs = list(map(lambda x: tf.image.resize(x, (48, 48), preserve_aspect_ratio=True), gb_inputs))
         pad_inputs = list(map(lambda x: tf.image.resize_with_pad(x, 48, 48), resize_inputs))
 

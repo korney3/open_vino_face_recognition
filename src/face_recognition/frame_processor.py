@@ -8,11 +8,13 @@ from src.emotions_classification.emotion_classifier import EmotionClassifier
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / 'common/python'))
 
-from utils import crop
-from landmarks_detector import LandmarksDetector
-from face_detector import FaceDetector
-from faces_database import FacesDatabase
-from face_identifier import FaceIdentifier
+
+from open_model_zoo.demos.face_recognition_demo.python.utils import crop
+
+from open_model_zoo.demos.face_recognition_demo.python.landmarks_detector import LandmarksDetector
+from open_model_zoo.demos.face_recognition_demo.python.face_detector import FaceDetector
+from open_model_zoo.demos.face_recognition_demo.python.faces_database import FacesDatabase
+from open_model_zoo.demos.face_recognition_demo.python.face_identifier import FaceIdentifier
 
 log.basicConfig(format='[ %(levelname)s ] %(message)s', level=log.DEBUG, stream=sys.stdout)
 

@@ -1,5 +1,5 @@
 import requests
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 import numpy as np
 import pandas as pd
 from flask_cors import CORS
@@ -14,11 +14,16 @@ app = Flask(__name__)
 cors = CORS(app)
 
 
-
-@app.route(('/analyze'))
+@app.route('/class-analyze', methods=['POST'])
 def file_content():
-    filename = request.args.get('input_video_path', type=str)
-    return Response(process_video(filename))
+    root_dir = "/home/alex/ezee-emotions-analyzer-backend/"
+    data = request.json
+
+    filename = data['filename']#request.args.get('filename', type=str)
+    absolute_filename = os.path.join(root_dir, filename)
+    output_path = process_video(absolute_filename)
+
+    return output_path
 
 
 @app.route(('/kill_flask'))
