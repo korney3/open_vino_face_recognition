@@ -21,9 +21,9 @@ def file_content():
 
     filename = data['filename']#request.args.get('filename', type=str)
     absolute_filename = os.path.join(root_dir, filename)
-    output_path = process_video(absolute_filename)
+    results = process_video(absolute_filename)
 
-    return output_path
+    return results
 
 
 @app.route(('/kill_flask'))

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from openvino.runtime import Core, get_version
 
-from src.emotions_classification.emotion_classifier import EmotionClassifier
+from src.emotions_classification.emotion_classifier import EmotionClassifier, EmotionClassifierConvNext
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / 'common/python'))
 
@@ -39,7 +39,7 @@ class FrameProcessor:
         self.face_identifier = FaceIdentifier(core, args.m_reid,
                                               match_threshold=args.t_id,
                                               match_algo=args.match_algo)
-        self.emotion_classifier = EmotionClassifier()
+        self.emotion_classifier = EmotionClassifierConvNext()#EmotionClassifier()
 
         self.face_detector.deploy(args.d_fd)
         self.landmarks_detector.deploy(args.d_lm, self.QUEUE_SIZE)

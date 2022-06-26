@@ -144,7 +144,7 @@ def process_video(input_video_filename: str):
     elif not (args.crop_size[0] == 0 and args.crop_size[1] == 0):
         raise ValueError('Both crop height and width should be positive')
     video_writer = cv2.VideoWriter()
-
+    agg_results = {}
     while True:
         start_time = perf_counter()
         frame = cap.read()
@@ -174,7 +174,7 @@ def process_video(input_video_filename: str):
 
         detections = frame_processor.process(frame)
         results = save_detections_to_json(detections, frame_num, log_dir=jsons_path, db_path=args.fg)
-
+        agg_results[frame_num] = results
         r = requests.post('http://127.0.0.1:3000/api/result-class', json=results)
         print(r)
         # yield results
@@ -204,9 +204,11 @@ def process_video(input_video_filename: str):
     metrics.log_total()
     for rep in presenter.reportMeans():
         log.info(rep)
+    agg_results["video_src"] = args.output
+
     return args.output
 
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
-# process_video("./demo_video/class_front_view.mp4")
+process_video("./demo_video/class_front_view_short.mp4")
